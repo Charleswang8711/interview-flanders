@@ -3,7 +3,7 @@ import styles from './styles.module.css';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { Alert, Button, Link } from '@mui/material';
-import { randomIntBetween } from '../utils/math';
+import { randomIntBetween } from '../../utils/math';
 import { User } from './types';
 import { InputText } from '../../components/InputText';
 

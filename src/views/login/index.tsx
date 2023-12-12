@@ -1,11 +1,11 @@
 import React, { ReactElement, useEffect } from 'react';
 import styles from './styles.module.css';
-import TextField from '@mui/material/TextField';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { Alert, Button, Link } from '@mui/material';
 import { randomIntBetween } from '../utils/math';
 import { User } from './types';
+import { InputText } from '../../components/InputText';
 
 /**
  *  The login view.
@@ -62,14 +62,14 @@ export default function Login(): ReactElement {
       <div className={styles.container}>
       <div className={styles.header}> Login</div>
       <div className={styles.name}>
-        <TextField 
+        <InputText 
           id="name" 
           name='name'
           label = 'name' 
           onChange={onChangeHandler}/>
       </div>
       <div className={styles.password}>
-        <TextField 
+        <InputText 
           id="password" 
           name='password' 
           label='password' 
@@ -77,8 +77,8 @@ export default function Login(): ReactElement {
       </div>
       
      <div className={styles.footer}>
-      <FormControlLabel control={<Checkbox  />} label="Remember Me" />
-      <Link href='#' underline='hover' className={styles.forgotPW} >Forgot Password</Link>
+      <FormControlLabel className={styles.rememberMe} control={<Checkbox  />} label="Remember Me" />
+      <Link href='#' className={styles.forgotPW} underline='always' >Forgot Password</Link>
      </div>
   
      <Button 
@@ -92,7 +92,7 @@ export default function Login(): ReactElement {
 
      <div className={styles.NoAccount}>
        <p> Do not have an account</p> 
-       <Link href='#' className={styles.RegHere} >Register here</Link>
+       <Link href='#' className={styles.RegHere} underline="always" >Register here</Link>
       </div>
     </div>
     }

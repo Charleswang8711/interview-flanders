@@ -1,0 +1,60 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh; 
+  weight: 100vw;
+
+ 
+
+  & .header {
+    font-size: 5rem;
+    font-weight: 300;
+    color: #95bce2;
+    margin-bottom: 3rem;
+  }
+  
+  & .name {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+  }
+  
+  & .password {
+    margin-bottom: 2rem;
+  }
+  
+  & .footer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 3rem;
+
+    & .forgotPW {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+  
+  & .NoAccount {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 5rem;
+
+    & p {
+      margin-right: 1rem;
+    }
+
+    & .RegHere {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+}
+
+
+

@@ -5,8 +5,10 @@
   justify-content: center;
   height: 100vh; 
   weight: 100vw;
-
- 
+  background-image: url("/public/images/background-login.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 
   & .header {
     font-size: 5rem;
@@ -19,10 +21,14 @@
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
+    width: 18rem;
   }
   
   & .password {
+    display: flex;
+    flex-direction: column;
     margin-bottom: 2rem;
+    width: 18rem;
   }
   
   & .footer {
@@ -31,10 +37,15 @@
     justify-content: space-between;
     margin-bottom: 3rem;
 
+    & .rememberMe {
+      color: #ffffff;
+    }
+
     & .forgotPW {
       display: flex;
       flex-direction: row;
       align-items: center;
+      color: #ffffff;
     }
   }
 
@@ -50,12 +61,14 @@
 
     & p {
       margin-right: 1rem;
+      color: #ffffff;
     }
 
     & .RegHere {
       display: flex;
       flex-direction: row;
       align-items: center;
+      color: #ffffff;
     }
   }
 }

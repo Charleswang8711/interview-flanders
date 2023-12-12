@@ -77,7 +77,7 @@ export default function Login(): ReactElement {
       </div>
       
      <div className={styles.footer}>
-      <FormControlLabel className={styles.rememberMe} control={<Checkbox  />} label="Remember Me" />
+      <FormControlLabel className={styles.rememberMe} control={<Checkbox className={styles.checkbox}  />} label="Remember Me" />
       <Link href='#' className={styles.forgotPW} underline='always' >Forgot Password</Link>
      </div>
   

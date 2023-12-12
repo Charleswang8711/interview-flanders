@@ -4,7 +4,21 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Available Scripts
 
-In the project directory, you can run:
+There are two following ways to run the project alternatively
+
+1. Run it inside a docker
+   
+   > :warning: **If you are using Windows and Docker is running on WSL2**
+   > Ensure that you have cloned the repository inside WSL2, if you mount the files from windows there will be a _large_ performance impact.
+   > The first time this is run it can take about 15 min, after that it will be quicker as the docker image will already be built.
+
+   - Build, start and connect to the docker environment on Linux / WSL
+   ### `./docker/sdk go`
+   
+   - Start the app 
+   ### `pnpm start`
+
+2. Run it from the root directly:
 
 ### `npm start`
 

@@ -1,0 +1,284 @@
+#!/bin/bash
+
+# interview Docker Build Environment
+# interview Version: <version>
+# Based on Atomix SDK, which in turn was based on https://gist.github.com/waylan/4080362
+
+set -e
+
+# reads the name of the image and container from package.json
+PROJECT_NAME=$(node -p "require('./package.json').name.replace('/', '-').replace('@', 'at-')")
+PROJECT_VERSION=$(node -p "require('./package.json').version.split('.').join('-')")
+
+BASE_COMMAND_NAME="$0"
+SDK_NAME="interview SDK Container"
+SDK_PATH=$(cd $(dirname $BASE_COMMAND_NAME) && pwd)
+
+# reads the timezone from the host machine
+DOCKER_TIMEZONE=$(node -p "Intl.DateTimeFormat().resolvedOptions().timeZone")
+
+# Prefixes the name of the image and container with the project name and version
+DOCKER_IMAGE_NAME="img-$PROJECT_NAME-$PROJECT_VERSION"
+DOCKER_CONTAINER_NAME="ctr-$PROJECT_NAME-$PROJECT_VERSION"
+
+is_container_running() {
+  if [ -z "$(docker ps | grep $DOCKER_CONTAINER_NAME)" ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+is_image_built() {
+  if [ -z "$(docker images | grep $DOCKER_IMAGE_NAME)" ]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
+is_function() {
+  type -t $1 | grep "function" > /dev/null
+}
+
+get_table_row_cell() {
+  printf '%-20s' "${1}"
+}
+
+output_as_table_row() {
+  all_cells=""
+
+  for x in $(seq 1 $#); do
+    result=$(get_table_row_cell "${!x}")
+    all_cells="${all_cells}${result}"
+  done
+
+  printf '%-40s' "${all_cells}"
+  echo ''
+}
+
+fixup_user_id() {
+  hostUID="$(id -u)"
+  hostGID="$(id -g)"
+  if [ "$hostUID" -ne "1000" -o "$hostGID" -ne "1000" ]; then
+    docker exec -u root -t $DOCKER_CONTAINER_NAME usermod -u $hostUID dev
+    docker exec -u root -t $DOCKER_CONTAINER_NAME groupmod -g $hostGID dev
+  fi
+}
+
+sub_help() {
+  echo ""
+  echo "Usage: ${BASE_COMMAND_NAME} <subcommand>"
+  echo ""
+  echo "Subcommands:"
+  echo "├ status          Reports the status of the Docker container."
+  echo "├ build           Builds the Docker container image (if needed)."
+  echo "│ └ --rebuild     Rebuilds the Docker container image if it's already built."
+  echo "├ start           Builds the Docker container (if needed) and runs it."
+  echo "│ ├ -v <host_fdr>:<mount point>  Mounts <host_fdr> folder at the <mount_point> location inside the container."
+  echo "│ │                              Can be specified multiple times."
+  echo "│ │                              Defaults to <current folder>:/devel if not specified."
+  echo "│ └ -p <host port>:<docker port> Exposes container's <docker port> as the host's <host port>."
+  echo "│                                Can be specified multiple times."
+  echo "│                                Defaults to 3000:3000, 6080:6080, 8080:8080, 2883:2883, and 9229:9229 if not specified."
+  echo "├ connect         Logs into the Docker container as the default 'dev' user."
+  echo "│ └ --root        Logs into the Docker container as the root user."
+  echo "├ go              Shortcut for start and connect (accepts the same arguments)."
+  echo "├ stop            Stops the Docker container. Does not destroy it."
+  echo "├ destroy         Removes the Docker container (requires you to re-build)."
+  echo "└ exec <cmd>      Executes <cmd> inside the container. eg. running NPM commands"
+  echo ""
+}
+
+sub_status() {
+  result=""
+
+  if is_container_running; then
+    result="Running"
+  else
+    if is_image_built; then
+      result="Stopped (built)"
+    else
+      result="Stopped (unbuilt)"
+    fi
+  fi
+
+  output_as_table_row "$SDK_NAME " "${result}"
+}
+
+sub_build() {
+  if is_image_built && [ "$1" != "--rebuild" ] ; then
+    echo "$SDK_NAME already built."
+  else
+    sub_stop
+
+    docker build --tag $DOCKER_IMAGE_NAME - < $SDK_PATH/Dockerfile
+
+    last_status=$?
+    if [ $last_status -ne 0 ]; then
+      echo "Error building $SDK_NAME image."
+      exit $last_status
+    fi
+  fi
+}
+
+sub_start() {
+  echo "Starting $SDK_NAME..."
+
+  if is_container_running; then
+    echo "$SDK_NAME is already running."
+  else
+    sub_build
+
+    DEFAULT_PORTS="-p3000:3000 -p3001:3001 -p6080:6080 -p8080:8080 -p2883:2883 -p9229:9229"
+    DEFAULT_VOLUMES="-v $(pwd -P):/devel"
+    while getopts ":p:v:" opt; do
+      case "$opt" in
+        p) PORTS="$PORTS -p$OPTARG" ;;
+        v)
+          hostPath=${OPTARG%:*}
+          if ! [ -d $hostPath ]; then
+            echo "Error starting $SDK_NAME: $hostPath from -v parameter must be an existing folder in the host machine"
+            exit 1
+          fi
+
+          ctnrPath=${OPTARG#${hostPath}}
+          ctnrPath=${ctnrPath#:}
+          if [ -z "$ctnrPath" ]; then
+            echo "Error starting $SDK_NAME: $OPTARG from -v parameter does not contain a mount point"
+            exit 1
+          fi
+
+          hostPath=$(cd $hostPath && pwd)
+          VOLUMES="$VOLUMES -v ${hostPath}:${ctnrPath}"
+        ;;
+      esac
+    done
+    PORTS=${PORTS:-$DEFAULT_PORTS}
+    VOLUMES=${VOLUMES:-$DEFAULT_VOLUMES}
+    if [ -f $HOME/.npmrc ]; then
+      VOLUMES="$VOLUMES -v $HOME/.npmrc:/home/dev/.npmrc"
+    fi
+    if [ -f $HOME/.gitconfig ]; then
+      VOLUMES="$VOLUMES -v $HOME/.gitconfig:/home/dev/.gitconfig"
+    fi
+    if [ -d $HOME/.ssh ]; then
+      VOLUMES="$VOLUMES -v $HOME/.ssh:/home/dev/.ssh"
+    fi
+
+    docker run -e TZ="$DOCKER_TIMEZONE" $PORTS $VOLUMES --rm --name $DOCKER_CONTAINER_NAME -d $DOCKER_IMAGE_NAME
+
+    last_status=$?
+    if [ $last_status -ne 0 ]; then
+      echo "Error starting $SDK_NAME."
+      exit $last_status
+    fi
+
+    fixup_user_id
+
+    echo "$SDK_NAME started. Run '$BASE_COMMAND_NAME connect' to log in."
+  fi
+}
+
+sub_connect() {
+  echo "Connecting to $SDK_NAME..."
+
+  if ! is_container_running; then
+    echo "Error connecting to $SDK_NAME. It is not running."
+    exit 1
+  fi
+
+  # Add 'p:v:' to getopts to ignore sub_start parameters passed to sub_go
+  while getopts ":-:p:v:" opt; do
+    case "$opt" in
+      -) [ "$OPTARG" == "root" ] && usr="-u root";;
+    esac
+  done
+
+  docker exec $usr -it $DOCKER_CONTAINER_NAME bash
+}
+
+sub_go() {
+  sub_start $@
+  sub_connect $@
+}
+
+sub_stop() {
+  echo "Stopping $SDK_NAME..."
+
+  if ! is_container_running; then
+    echo "$SDK_NAME is not running."
+  else
+    docker stop $DOCKER_CONTAINER_NAME
+
+    last_status=$?
+    if [ $last_status -ne 0 ]; then
+      echo "Error stopping $SDK_NAME."
+      exit $last_status
+    fi
+
+    echo "$SDK_NAME stopped."
+  fi
+}
+
+sub_destroy() {
+  echo "Destroying $SDK_NAME image..."
+
+  if ! is_image_built; then
+    echo "$SDK_NAME image is not built."
+    exit 1
+  fi
+
+  sub_stop
+  docker image remove $DOCKER_IMAGE_NAME
+
+  last_status=$?
+  if [ $last_status -ne 0 ]; then
+    echo "Error destroying $DOCKER_IMAGE_NAME."
+    exit $last_status
+  fi
+
+  echo "Successfully destroyed $SDK_NAME image."
+}
+
+sub_exec() {
+  if ! is_container_running; then
+    echo "$SDK_NAME is not running."
+    exit 1
+  fi
+
+  command=$@
+  echo "Executing command \"${command}\" in $SDK_NAME..."
+
+  docker exec -t $DOCKER_CONTAINER_NAME $command 3>&1 1>&2 2>&3
+
+  last_status=$?
+  if [ $last_status -ne 0 ]; then
+    echo "Error executing command \"$command\" in $SDK_NAME."
+    exit $last_status
+  fi
+
+  echo "Command executed"
+}
+
+# Turn on catching any non-success error code in pipes
+shopt -s -o pipefail
+
+subcommand=$1
+additionalargs=${@:2}
+
+(
+case $subcommand in
+"" | "-h" | "--help")
+  sub_help
+  ;;
+*)
+  if ! is_function sub_$subcommand; then
+    echo "Error: '$subcommand' is not a known subcommand." >&2
+    echo "       Run '$BASE_COMMAND_NAME --help' for a list of known subcommands." >&2
+    exit 1
+  fi
+  sub_${subcommand} $additionalargs
+  ;;
+esac
+)

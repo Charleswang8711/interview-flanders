@@ -4,9 +4,9 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 ## Available Scripts
 
-There are two following ways to run the project alternatively
+There are two following ways to run the project
 
-1. Run it inside a docker
+1. Run it with a docker
    
    > :warning: **If you are using Windows and Docker is running on WSL2**
    > Ensure that you have cloned the repository inside WSL2, if you mount the files from windows there will be a _large_ performance impact.
@@ -18,7 +18,9 @@ There are two following ways to run the project alternatively
    - Start the app 
    ### `pnpm start`
 
-2. Run it from the root directly:
+   ![Alt text](image.png)
+
+2. Run it without a docker:
 
    ### `npm start`
 

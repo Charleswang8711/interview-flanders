@@ -37,12 +37,16 @@
       align-items: center;
     }
   }
+
+  & .LoginBtn {
+    margin-bottom: 1rem;
+  }
   
   & .NoAccount {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    margin-top: 5rem;
+    margin-top: 3rem;
 
     & p {
       margin-right: 1rem;

@@ -15,6 +15,9 @@ There are two following ways to run the project
    - Build, start and connect to the docker environment on Linux / WSL
    ### `./docker/sdk go`
    
+   - Install the dependencies 
+   ### `pnpm install`
+
    - Start the app 
    ### `pnpm start`
 
@@ -22,6 +25,10 @@ There are two following ways to run the project
 
 2. Run it without a docker:
 
+   - Install the dependencies 
+   ### `npm install`
+
+   - Start the app 
    ### `npm start`
 
    Runs the app in the development mode.\
